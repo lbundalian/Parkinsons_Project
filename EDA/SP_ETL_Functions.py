@@ -124,7 +124,7 @@ def drop_correlated_vbles(df, target_variable, threshold, visualize):
 
     if visualize:
         # Create a heatmap to visualize the correlation matrix
-        plt.figure(figsize=(10, 8))
+        plt.figure(figsize=(8, 6))
         sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
         plt.title('Correlation Matrix')
         plt.show()
@@ -154,28 +154,43 @@ def drop_correlated_vbles(df, target_variable, threshold, visualize):
 
 
 # Generate box plots. Used to visualize outliers and differences between controls and patients
-def generate_boxplots(df, group_variable):
+def generate_boxplots(df, group_variable=None):
     """
-    Generates boxplots for all numerical variables in the DataFrame based on the group variable.
+    Generates boxplots for all numerical variables in the DataFrame.
+    Box plots can be differentiated by a grouping variable or not.
 
     Parameters:
         df (pd.DataFrame): Pandas DataFrame containing the data.
-        group_variable (str): Name of the variable to group by.
+        group_variable (str, optional): Name of the variable to group by.
 
     Returns:
         --
     """
     # Filter numerical columns from the DataFrame, excluding the group variable
-    numerical_columns = [col for col in df.select_dtypes(include=['number']).columns if col != group_variable]
+    numerical_columns = df.select_dtypes(include=['number']).columns
 
-    # Create a plot for each numerical column
-    for col in numerical_columns:
-        if col != group_variable:
-            plt.figure(figsize=(4, 3))
-            df.boxplot(column=col, by=group_variable)
-            plt.title(f'Boxplot of {col} by {group_variable}')
-            plt.suptitle('')  # Suppress the default title
-            plt.show()
+    with warnings.catch_warnings(): # Suppress warnings within this block
+        warnings.filterwarnings("ignore", category=FutureWarning) 
+            
+        # Create a plot for each numerical column
+        for col in numerical_columns:
+    
+            if col != group_variable:
+                plt.figure(figsize=(4, 3))
+                
+                # No grouping variable
+                if group_variable is None:
+                    sns.boxplot(y=df[col], color='skyblue')
+                    plt.title(f"Boxplot of {col}")
+        
+                # Using a grouping variable
+                else:
+                    sns.boxplot(y=df[col], x=df[group_variable], color='skyblue')
+                    plt.title(f"Boxplot of {col} by {group_variable}")
+                
+                plt.xlabel(col)
+                plt.ylabel("Values")
+                plt.show()
 
 
 
@@ -253,19 +268,22 @@ def normalize_dataframe(df, method='z-score', exclude_columns=None):
     # Exclude specific columns from normalization
     if exclude_columns is None:
         exclude_columns = []
-
-    # Select columns to normalize (numerical columns except for excluded ones)
-    columns_to_normalize = df_normalized.select_dtypes(include=['float64', 'int64']).columns.difference(exclude_columns)
-
-    # Apply normalization
-    if method == 'z-score':
-        scaler = StandardScaler()
-        df_normalized[columns_to_normalize] = scaler.fit_transform(df_normalized[columns_to_normalize])
-    elif method == 'min-max':
-        scaler = MinMaxScaler()
-        df_normalized[columns_to_normalize] = scaler.fit_transform(df_normalized[columns_to_normalize])
-    else:
-        raise ValueError("Invalid normalization method. Choose 'z-score' or 'min-max'.")
+    
+    with warnings.catch_warnings(): # Suppress warnings within this block
+        warnings.filterwarnings("ignore", category=FutureWarning) 
+            
+        # Select columns to normalize (numerical columns except for excluded ones)
+        columns_to_normalize = df_normalized.select_dtypes(include=['float64', 'int64']).columns.difference(exclude_columns)
+    
+        # Apply normalization
+        if method == 'z-score':
+            scaler = StandardScaler()
+            df_normalized[columns_to_normalize] = scaler.fit_transform(df_normalized[columns_to_normalize])
+        elif method == 'min-max':
+            scaler = MinMaxScaler()
+            df_normalized[columns_to_normalize] = scaler.fit_transform(df_normalized[columns_to_normalize])
+        else:
+            raise ValueError("Invalid normalization method. Choose 'z-score' or 'min-max'.")
 
     return df_normalized
 
