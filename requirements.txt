@@ -1,0 +1,15 @@
+numpy==1.25.2
+pandas==2.1.0
+scipy==1.11.2
+seaborn==0.12.2
+fastapi==0.109.0
+uvicorn==0.27.0
+python-dotenv==1.0.0
+joblib
+dataclasses
+scikit-learn==1.2.2
+
+
+
+
+
