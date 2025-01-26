@@ -13,26 +13,32 @@ class CrossValidator:
         self.model = model
         self.cv = cv
 
+    
     def calculate_performance(self,y_pred,y):
 
-        accuracy = accuracy_score(y, y_pred)
-        conf_matrix = confusion_matrix(y, y_pred)
-        class_report = classification_report(y, y_pred, output_dict=True)
-
-        print(f"Accuracy: {accuracy:.4f}")
-        print("Confusion Matrix:")
-        print(conf_matrix)
-        print("\nClassification Report:")
-        print(classification_report(y, y_pred))
-
-        # Return metrics as a dictionary
-        metrics = {
-            "accuracy": accuracy,
-            "confusion_matrix": conf_matrix,
-            "classification_report": class_report,
-        }
+        with warnings.catch_warnings():  # Suppress warnings within this block
+            warnings.filterwarnings("ignore", category=FutureWarning)
+            
+            accuracy = accuracy_score(y, y_pred)
+            conf_matrix = confusion_matrix(y, y_pred)
+            class_report = classification_report(y, y_pred, output_dict=True)
+    
+            print(f"Accuracy: {accuracy:.4f}")
+            print("Confusion Matrix:")
+            print(conf_matrix)
+            print("\nClassification Report:")
+            print(classification_report(y, y_pred))
+    
+            # Return metrics as a dictionary
+            metrics = {
+                "accuracy": accuracy,
+                "confusion_matrix": conf_matrix,
+                "classification_report": class_report,
+            }
+            
         return metrics
 
+    
     def validate(self, X: pd.DataFrame, y: pd.Series):
        
         with warnings.catch_warnings():  # Suppress warnings within this block

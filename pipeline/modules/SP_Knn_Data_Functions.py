@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from imblearn.over_sampling import SMOTE
+from collections import Counter
 import warnings
 
 
@@ -86,7 +88,7 @@ def create_knn(n, X_train, y_train):
     Parameters:
         n (int): Number of neighbors for the model.
         X_train (pd.DataFrame): Subset of data (predictor variables) for training.
-        y_train (pd.DataFrame): Subset of labels (predictor variables) for training.
+        y_train (list): Subset of labels (predictor variables) for training.
 
     Returns:
         knn (model): The KNN classifier model.
@@ -103,4 +105,31 @@ def create_knn(n, X_train, y_train):
 
     return knn
 
+
+
+# Resampling method
+def resample(X, y):
+    """
+    Resamples the X and y parameters for the model.
+
+    Parameters:
+        X (pd.DataFrame): Subset of data (predictor variables).
+        y (list): Subset of labels (predictor variables).
+
+    Returns:
+        X_resampled (pd.DataFrame): X resampled
+        y_resampled (list): y resampled.
+    """
+
+    with warnings.catch_warnings(): # Suppress warnings within this block
+        warnings.filterwarnings("ignore", category=FutureWarning) 
+        
+        smote = SMOTE(random_state=42)
+        X_resampled, y_resampled = smote.fit_resample(X, y)
+        
+        print("Original train class distribution:", Counter(y))
+        print("Resampled train class distribution:", Counter(y_resampled))
+
+
+    return X_resampled, y_resampled
 
