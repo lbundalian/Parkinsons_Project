@@ -63,7 +63,7 @@ def handle_outliers(df):
     """
     
     # Get the remaining numerical columns (excluding the status column)
-    numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
+    numeric_columns = df.select_dtypes(include=['float64', 'int64'])
     
     # Exclude the status column from the numerical columns
     status_column = 'Status'
@@ -101,55 +101,37 @@ def handle_outliers(df):
 
 
 # Handle correlation between variables
-def drop_correlated_vbles(df, target_variable, threshold, visualize):
+def drop_correlated_vbles(df, threshold):
     """
-    Identify outliers using quartiles and interquartile range, and handle them
-    using the IterativeImputer function.
+    Identify correlated variable pairs and drop one of them.
 
     Parameters:
         df (pd.DataFrame): Original dataframe with correlated variables.
-        target_variable (string): The name of the target variable or outcome.
         threshold (float): The select threshold to filter correlation.
-        visualize (boolean): Select whether to visualize the correlation matrix or not.
 
     Returns:
-        new_df (pd.DataFrame): New dataframe without correlated variables.
+        reduced_df (pd.DataFrame): New dataframe without correlated variables.
+        collinear_features (list): The correlated variables that were removed.
     """
     
     # Filter the numerical columns in the dataframe
-    numeric_columns = df.select_dtypes(include=['float64']).columns
-    
-    # Calculate the correlation matrix only with the numerical columns
-    correlation_matrix = df[numeric_columns].corr()
+    numeric_columns = df.select_dtypes(include=['float64'])
 
-    if visualize:
-        # Create a heatmap to visualize the correlation matrix
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-        plt.title('Correlation Matrix')
-        plt.show()
-    
+    # Calculate the correlation matrix only with the numerical columns
+    corr_matrix = numeric_columns.corr().abs()
+
     # Get highly correlated variables
-    highly_correlated_vars = set()
-    for i in range(len(correlation_matrix.columns)):
-        for j in range(i):
-            if abs(correlation_matrix.iloc[i, j]) > threshold:
-                var1 = correlation_matrix.columns[i]
-                var2 = correlation_matrix.columns[j]
-                corr_with_target_var1 = abs(df[var1].corr(df[target_variable]))
-                corr_with_target_var2 = abs(df[var2].corr(df[target_variable]))
-                if corr_with_target_var1 < corr_with_target_var2:
-                    highly_correlated_vars.add(var1)
-                else:
-                    highly_correlated_vars.add(var2)
+    upper_triangle = np.triu(np.ones(corr_matrix.shape), k=1)  # Upper triangle mask
+    upper_triangle_df = pd.DataFrame(upper_triangle, index=corr_matrix.index, columns=corr_matrix.columns)
+    collinear_features = [
+        column for column in corr_matrix.columns 
+        if any(corr_matrix[column][upper_triangle_df[column] > 0] > threshold)
+    ]
 
     # Drop the highly correlated variables
-    new_df = df.drop(columns=highly_correlated_vars)
+    reduced_df = df.drop(columns=collinear_features)
     
-    # Display the variables identified as highly correlated
-    print("\nHighly correlated variables removed:", highly_correlated_vars)
-
-    return new_df
+    return reduced_df, collinear_features
 
 
 
@@ -236,6 +218,10 @@ def scatter_plot(df, var1, var2, groups):
     Returns:
         --
     """
+
+    # Set figure size
+    plt.figure(figsize=(4, 3))
+    
     unique_groups = df[groups].unique()
     for group in unique_groups:
         subset = df[df[groups] == group]
@@ -286,4 +272,3 @@ def normalize_dataframe(df, method='z-score', exclude_columns=None):
             raise ValueError("Invalid normalization method. Choose 'z-score' or 'min-max'.")
 
     return df_normalized
-
